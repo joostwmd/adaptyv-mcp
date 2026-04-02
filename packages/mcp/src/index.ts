@@ -1,5 +1,17 @@
-/**
- * MCP server entry — see `.cursor/specs/mcp.md` for design.
- * Use `@adaptyv/foundry-shared` for Zod schemas when implementing tools.
- */
-export {};
+import { startHttp } from "./transports/http.js";
+import { startStdio } from "./transports/stdio.js";
+
+const mode = (process.env.MODE ?? "stdio").toLowerCase();
+
+async function main(): Promise<void> {
+  if (mode === "http") {
+    await startHttp();
+    return;
+  }
+  await startStdio();
+}
+
+main().catch((err) => {
+  console.error("[adaptyv-foundry-mcp] fatal:", err);
+  process.exit(1);
+});
