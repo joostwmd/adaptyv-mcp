@@ -10,8 +10,7 @@ import {
 } from "@adaptyv/foundry-shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FoundryClient } from "../src/client.js";
-import { errorBody } from "./fixtures/common.js";
-import { sequenceFixtures } from "./fixtures/sequences.js";
+import { errorBody, sequenceFixtures } from "@adaptyv/foundry-shared/fixtures";
 import {
   assertLastFetch,
   installFetchMock,

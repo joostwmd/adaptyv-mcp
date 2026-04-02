@@ -4,9 +4,8 @@ import {
   submitFeedbackResponseSchema,
 } from "@adaptyv/foundry-shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { errorBody, feedbackFixtures } from "@adaptyv/foundry-shared/fixtures";
 import { FoundryClient } from "../src/client.js";
-import { errorBody } from "./fixtures/common.js";
-import { feedbackFixtures } from "./fixtures/feedback.js";
 import {
   assertLastFetch,
   installFetchMock,

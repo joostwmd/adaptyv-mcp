@@ -8,11 +8,15 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./fixtures": {
+      "types": "./dist/fixtures/index.d.ts",
+      "import": "./dist/fixtures/index.js"
     }
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external zod"
+    "build": "tsup src/index.ts src/fixtures/index.ts --format esm --dts --clean --external zod"
   },
   "dependencies": {
     "zod": "^3.24.1"

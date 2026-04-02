@@ -11,8 +11,7 @@ import {
 } from "@adaptyv/foundry-shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FoundryClient } from "../src/client.js";
-import { errorBody } from "./fixtures/common.js";
-import { quoteFixtures } from "./fixtures/quotes.js";
+import { errorBody, quoteFixtures } from "@adaptyv/foundry-shared/fixtures";
 import {
   assertLastFetch,
   installFetchMock,

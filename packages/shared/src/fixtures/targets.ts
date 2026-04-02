@@ -1,3 +1,5 @@
+import { fixtureIds } from "./common.js";
+
 export const targetFixtures = {
   list: {
     query: {
@@ -11,30 +13,53 @@ export const targetFixtures = {
     response: {
       items: [
         {
-          id: "f3b2afd0-f70b-5191-a90a-ae1e0545c744",
+          id: fixtureIds.targets.egfr,
+          name: "Human EGFR / ERBB1 Protein, His Tag",
+          vendor_name: "ACRO Biosystems",
+          catalog_number: "EGR-H5222",
+          url: `https://targets.adaptyvbio.com/protein/${fixtureIds.targets.egfr}`,
+          uniprot_id: "P00533",
+        },
+        {
+          id: fixtureIds.targets.pdl1,
           name: "Human PD-L1 / B7-H1 Protein",
           vendor_name: "ACRO Biosystems",
           catalog_number: "PD1-H5221",
-          url: "https://targets.adaptyvbio.com/protein/f3b2afd0-f70b-5191-a90a-ae1e0545c744",
+          url: `https://targets.adaptyvbio.com/protein/${fixtureIds.targets.pdl1}`,
           uniprot_id: "Q9NZQ7",
         },
+        {
+          id: fixtureIds.targets.her2,
+          name: "Human HER2 / ERBB2 Protein, His-Avi Tag",
+          vendor_name: "ACRO Biosystems",
+          catalog_number: "HE2-H5223",
+          url: `https://targets.adaptyvbio.com/protein/${fixtureIds.targets.her2}`,
+          uniprot_id: "P04626",
+        },
       ],
-      total: 1,
-      count: 1,
+      total: 3,
+      count: 3,
       offset: 0,
     },
   },
   get: {
-    path: { target_id: "f3b2afd0-f70b-5191-a90a-ae1e0545c744" },
+    path: { target_id: fixtureIds.targets.pdl1 },
     response: {
-      id: "f3b2afd0-f70b-5191-a90a-ae1e0545c744",
+      id: fixtureIds.targets.pdl1,
       name: "Human PD-L1 / B7-H1 Protein",
       vendor_name: "ACRO Biosystems",
       catalog_number: "PD1-H5221",
-      url: "https://targets.adaptyvbio.com/protein/f3b2afd0-f70b-5191-a90a-ae1e0545c744",
+      url: `https://targets.adaptyvbio.com/protein/${fixtureIds.targets.pdl1}`,
       uniprot_id: "Q9NZQ7",
-      details: null,
-      pricing: null,
+      details: {
+        species: "Human",
+        expression_system: "HEK293",
+        purity: "≥95%",
+      },
+      pricing: {
+        list_price_cents: 89900,
+        currency: "usd",
+      },
     },
   },
   listCustomRequests: {
@@ -48,9 +73,16 @@ export const targetFixtures = {
           status: "pending_review" as const,
           created_at: "2026-02-10T09:00:00Z",
         },
+        {
+          id: "019a2222-2222-2222-2222-222222222222",
+          name: "Fc-fused cytokine tracer",
+          product_id: "CUSTOM-002",
+          status: "approved" as const,
+          created_at: "2026-02-12T11:30:00Z",
+        },
       ],
-      total: 1,
-      count: 1,
+      total: 2,
+      count: 2,
       offset: 0,
     },
   },

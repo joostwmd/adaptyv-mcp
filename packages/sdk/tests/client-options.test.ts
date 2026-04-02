@@ -1,7 +1,7 @@
+import { targetFixtures } from "@adaptyv/foundry-shared/fixtures";
 import { listTargetsInputSchema, targetListResponseSchema } from "@adaptyv/foundry-shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FoundryClient } from "../src/client.js";
-import { targetFixtures } from "./fixtures/targets.js";
 import {
   assertLastFetch,
   installFetchMock,
