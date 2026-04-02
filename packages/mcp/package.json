@@ -1,0 +1,23 @@
+{
+  "name": "adaptyv-foundry-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "adaptyv-foundry-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@adaptyv/foundry-shared": "workspace:*",
+    "@adaptyv/foundry-sdk": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

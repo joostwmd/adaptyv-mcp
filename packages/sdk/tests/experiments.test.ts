@@ -1,0 +1,278 @@
+import {
+  confirmExperimentQuoteInputSchema,
+  confirmQuoteResponseSchema,
+  costEstimateResponseSchema,
+  createExperimentInputSchema,
+  createExperimentResponseSchema,
+  errorResponseBodySchema,
+  estimateCostInputSchema,
+  expInfoSchema,
+  experimentConfirmationResponseSchema,
+  experimentInvoiceResponseSchema,
+  experimentListResponseSchema,
+  experimentQuoteResponseSchema,
+  getExperimentInputSchema,
+  listExperimentsInputSchema,
+  submitExperimentInputSchema,
+  updateExperimentInputSchema,
+  updateExperimentResponseSchema,
+} from "@adaptyv/foundry-shared";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FoundryApiError, FoundryClient } from "../src/client.js";
+import { errorBody } from "./fixtures/common.js";
+import { experimentFixtures } from "./fixtures/experiments.js";
+import {
+  assertLastFetch,
+  binaryResponse,
+  installFetchMock,
+  jsonErrorResponse,
+  jsonResponse,
+} from "./test-utils.js";
+
+describe("ExperimentsResource", () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    fetchMock = installFetchMock();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const client = () => new FoundryClient({ apiKey: "test-token" });
+
+  it("list — success", async () => {
+    const query = listExperimentsInputSchema.parse({
+      ...experimentFixtures.list.query,
+    });
+    fetchMock.mockResolvedValue(jsonResponse(experimentFixtures.list.response));
+    const out = await client().experiments.list(query);
+    experimentListResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.list.response);
+    assertLastFetch(fetchMock, { method: "GET", urlIncludes: "/experiments" });
+  });
+
+  it("list — FoundryApiError", async () => {
+    errorResponseBodySchema.parse(errorBody);
+    fetchMock.mockResolvedValue(jsonErrorResponse(500, errorBody));
+    await expect(client().experiments.list({})).rejects.toMatchObject({
+      name: "FoundryApiError",
+      status: 500,
+    } satisfies Partial<FoundryApiError>);
+  });
+
+  it("create — success (201)", async () => {
+    const body = createExperimentInputSchema.parse({
+      ...experimentFixtures.create.requestBody,
+    });
+    fetchMock.mockResolvedValue(
+      jsonResponse(experimentFixtures.create.response, { status: 201 }),
+    );
+    const out = await client().experiments.create(body);
+    createExperimentResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.create.response);
+    assertLastFetch(fetchMock, {
+      method: "POST",
+      urlIncludes: "/experiments",
+      body: experimentFixtures.create.requestBody,
+    });
+  });
+
+  it("create — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(422, errorBody));
+    await expect(
+      client().experiments.create({
+        name: "x",
+        experiment_spec: { experiment_type: "screening" },
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
+  it("get — success", async () => {
+    const expPath = getExperimentInputSchema.parse({
+      ...experimentFixtures.get.path,
+    });
+    fetchMock.mockResolvedValue(jsonResponse(experimentFixtures.get.response));
+    const out = await client().experiments.get(expPath);
+    expInfoSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.get.response);
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: `/experiments/${expPath.experiment_id}`,
+    });
+  });
+
+  it("get — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(404, errorBody));
+    await expect(
+      client().experiments.get({ experiment_id: "missing" }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("update — success", async () => {
+    const input = updateExperimentInputSchema.parse({
+      ...experimentFixtures.update.input,
+    });
+    const { experiment_id, ...body } = input;
+    fetchMock.mockResolvedValue(jsonResponse(experimentFixtures.update.response));
+    const out = await client().experiments.update(input);
+    updateExperimentResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.update.response);
+    assertLastFetch(fetchMock, {
+      method: "PATCH",
+      urlIncludes: `/experiments/${experiment_id}`,
+      body,
+    });
+  });
+
+  it("update — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(409, errorBody));
+    await expect(
+      client().experiments.update({
+        experiment_id: "019d4a2b-0000-0000-0000-000000000001",
+        name: "nope",
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("submit — success", async () => {
+    const subPath = submitExperimentInputSchema.parse({
+      ...experimentFixtures.submit.path,
+    });
+    fetchMock.mockResolvedValue(jsonResponse(experimentFixtures.submit.response));
+    const out = await client().experiments.submit(subPath);
+    experimentConfirmationResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.submit.response);
+    assertLastFetch(fetchMock, {
+      method: "POST",
+      urlIncludes: `/experiments/${subPath.experiment_id}/submit`,
+    });
+  });
+
+  it("submit — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(400, errorBody));
+    await expect(
+      client().experiments.submit({ experiment_id: "x" }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("estimateCost — success", async () => {
+    const body = estimateCostInputSchema.parse({
+      ...experimentFixtures.estimateCost.requestBody,
+    });
+    fetchMock.mockResolvedValue(
+      jsonResponse(experimentFixtures.estimateCost.response),
+    );
+    const out = await client().experiments.estimateCost(body);
+    costEstimateResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.estimateCost.response);
+    assertLastFetch(fetchMock, {
+      method: "POST",
+      urlIncludes: "/experiments/cost-estimate",
+      body: experimentFixtures.estimateCost.requestBody,
+    });
+  });
+
+  it("estimateCost — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(400, errorBody));
+    await expect(
+      client().experiments.estimateCost({
+        experiment_spec: { experiment_type: "screening" },
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("getInvoice — success", async () => {
+    const p = getExperimentInputSchema.parse({
+      ...experimentFixtures.getInvoice.path,
+    });
+    fetchMock.mockResolvedValue(
+      jsonResponse(experimentFixtures.getInvoice.response),
+    );
+    const out = await client().experiments.getInvoice(p);
+    experimentInvoiceResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.getInvoice.response);
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/invoice",
+    });
+  });
+
+  it("getInvoice — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(404, errorBody));
+    await expect(
+      client().experiments.getInvoice({ experiment_id: "x" }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("getQuote — success", async () => {
+    const p = getExperimentInputSchema.parse({
+      ...experimentFixtures.getQuote.path,
+    });
+    fetchMock.mockResolvedValue(jsonResponse(experimentFixtures.getQuote.response));
+    const out = await client().experiments.getQuote(p);
+    experimentQuoteResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.getQuote.response);
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/quote",
+    });
+  });
+
+  it("getQuote — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(404, errorBody));
+    await expect(
+      client().experiments.getQuote({ experiment_id: "x" }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("confirmQuote — success", async () => {
+    const input = confirmExperimentQuoteInputSchema.parse({
+      ...experimentFixtures.confirmQuote.input,
+    });
+    const { experiment_id, ...body } = input;
+    fetchMock.mockResolvedValue(
+      jsonResponse(experimentFixtures.confirmQuote.response),
+    );
+    const out = await client().experiments.confirmQuote(input);
+    confirmQuoteResponseSchema.parse(out);
+    expect(out).toEqual(experimentFixtures.confirmQuote.response);
+    assertLastFetch(fetchMock, {
+      method: "POST",
+      urlIncludes: `/experiments/${experiment_id}/quote/confirm`,
+      body,
+    });
+  });
+
+  it("confirmQuote — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(400, errorBody));
+    await expect(
+      client().experiments.confirmQuote({
+        experiment_id: "019d4a2b-0000-0000-0000-000000000001",
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("getQuotePdf — success", async () => {
+    const p = getExperimentInputSchema.parse({
+      ...experimentFixtures.getQuotePdf.path,
+    });
+    const bytes = new Uint8Array([...experimentFixtures.getQuotePdf.bytes]).buffer;
+    fetchMock.mockResolvedValue(binaryResponse(bytes));
+    const out = await client().experiments.getQuotePdf(p);
+    expect(out).toBeInstanceOf(ArrayBuffer);
+    expect(new Uint8Array(out)).toEqual(new Uint8Array(bytes));
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/quote/pdf",
+    });
+  });
+
+  it("getQuotePdf — FoundryApiError", async () => {
+    fetchMock.mockResolvedValue(jsonErrorResponse(404, errorBody));
+    await expect(
+      client().experiments.getQuotePdf({ experiment_id: "x" }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+});
