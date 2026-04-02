@@ -1,54 +1,151 @@
-# Adaptyv Foundry — SDK, MCP & client tooling
+# Adaptyv Foundry MCP
 
-Monorepo for **developer tooling around [Adaptyv Foundry](https://foundry.adaptyvbio.com)** (protein characterization): a TypeScript SDK, a Model Context Protocol (MCP) server for AI assistants, shared schemas and mock data, and (as part of the same initiative) a **notification / onboarding web app** so clients can connect integrations quickly.
+A **Model Context Protocol server** that exposes the [Adaptyv Foundry](https://foundry.adaptyvbio.com) protein characterization API as MCP tools — so AI assistants like Claude and Cursor can interact with experiments, targets, sequences, results, and more in natural language.
 
-This work is **independent** and **not affiliated with or endorsed by Adaptyv Bio**. It exists to support the mission—making programmatic access to Foundry-style workflows easier for builders and researchers.
+The server speaks both **stdio** (local process) and **Streamable HTTP** (`/mcp`) for remote deployments.
 
-## Development note (mock data)
+> **Not affiliated with or endorsed by Adaptyv Bio.** This is an independent project built to make programmatic access to Foundry-style workflows easier for builders and researchers.
 
-Almost everything here was built **without access to a live Foundry API account**. Types, request/response shapes, and **mock fixtures** are derived from Adaptyv’s **official OpenAPI** specification (`packages/sdk/tests/openapi.json`) and shared Zod schemas. The in-memory **`createMockFoundryClient`** path exercises the same flows end-to-end for tests and local MCP use. When you set a real **`FOUNDRY_API_TOKEN`** and turn mock mode off, the SDK and MCP talk to the **public Foundry API**—behavior then depends on your token and org.
+---
 
-## What’s in this repository
+## Motivation
 
-| Area | Location | Description |
-|------|----------|-------------|
-| **Shared types & mocks** | [`packages/shared`](packages/shared) | Zod schemas and canned **`mockdata`** aligned with the OpenAPI spec. |
-| **TypeScript SDK** | [`packages/sdk`](packages/sdk) | **`FoundryClient`** + resource methods; optional **`@adaptyv/foundry-sdk/mock`**. See [packages/sdk/README.md](packages/sdk/README.md). |
-| **MCP server** | [`packages/mcp`](packages/mcp) | Stdio or **Streamable HTTP** (`/mcp`) exposing Foundry as MCP tools. See [packages/mcp/README.md](packages/mcp/README.md). |
-| **Notification web app** | *Planned* | Small web UI to help clients connect faster (e.g. MCP config, webhooks, experiment alerts). Not checked into `main` yet; may land under `apps/` or similar. |
+Adaptyv Foundry offers a powerful API for running protein characterization experiments. There's no official MCP server, which means AI assistants can't query or manage experiments without custom glue code.
 
-## Quick start (from repo root)
+This project bridges that gap. Drop the MCP server into Cursor (or any MCP-compatible client), point it at your Foundry token, and start asking questions like *"what's the status of my latest experiment?"* or *"show me the results for experiment X"* — no context switching, no custom scripts.
+
+The server ships with a full **mock mode** backed by the official OpenAPI spec, so you can develop and test without a live Foundry account.
+
+---
+
+## Deploy your own instance
+
+The recommended path is a one-click **Render** deployment using the included [Blueprint](render.yaml).
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/joostwmd/adaptyv-mcp)
+
+After deploy, Render auto-generates `MCP_HTTP_API_KEY`. You must set `FOUNDRY_API_TOKEN` manually in the Render dashboard (your Adaptyv Foundry API token). Then install the server in your MCP client:
+
+**Cursor** — add to `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "adaptyv-foundry": {
+      "url": "https://<your-service>.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-MCP_HTTP_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+**Claude Desktop** — add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "adaptyv-foundry": {
+      "url": "https://<your-service>.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-MCP_HTTP_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+`GET /health` is always open and unauthenticated — use it to verify the deployment is live.
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `FOUNDRY_API_TOKEN` | Always | Your Adaptyv Foundry API token. Required even in mock mode. |
+| `MCP_HTTP_API_KEY` | When `MODE=http` | Clients must send `Authorization: Bearer <value>` to `/mcp`. |
+| `FOUNDRY_USE_MOCK` | No | Set to `1` to use in-memory mock data instead of live Foundry. |
+| `ALLOWED_ORIGINS` | No | Comma-separated Origin allowlist for browser clients. |
+
+---
+
+## Demo deployment (mock)
+
+A public demo instance runs with mock data — no real Foundry account needed. It's a great way to explore the available tools before deploying your own.
+
+**Cursor:**
+
+```json
+{
+  "mcpServers": {
+    "adaptyv-foundry-demo": {
+      "url": "https://adaptyv-foundry.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer adaptyv-foundry-demo"
+      }
+    }
+  }
+}
+```
+
+**Claude Desktop:**
+
+```json
+{
+  "mcpServers": {
+    "adaptyv-foundry-demo": {
+      "url": "https://adaptyv-foundry.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer adaptyv-foundry-demo"
+      }
+    }
+  }
+}
+```
+
+Health check: [`https://adaptyv-foundry.onrender.com/health`](https://adaptyv-foundry.onrender.com/health)
+
+> The demo runs on Render's free tier and may spin down after inactivity — the first request after a cold start can take ~30 seconds.
+
+---
+
+## Roadmap
+
+- [ ] **Fly.io one-click deployment** — `fly.toml` is already in the repo; the goal is a proper deploy button and documented secrets workflow matching the Render experience.
+- [ ] **End-to-end tests against the live Foundry API** — current tests run fully against mock data derived from the OpenAPI spec. The next step is an opt-in E2E suite that fires against a real `FOUNDRY_API_TOKEN` to validate the full request/response cycle.
+- [ ] **Slack notification delivery** — see the companion project below.
+
+---
+
+## Also built: Adaptyv Notifications
+
+If you want **email alerts** when your Foundry experiments change status, check out the companion project:
+
+**[joostwmd/adaptyv-notifications](https://github.com/joostwmd/adaptyv-notifications)** — receives Foundry experiment webhooks and fans out configurable email notifications, with a small dashboard for managing destinations and delivery history.
+
+---
+
+## Repository structure
+
+| Package | Description |
+|---|---|
+| [`packages/shared`](packages/shared) | Zod schemas and mock fixtures aligned with the Foundry OpenAPI spec. |
+| [`packages/sdk`](packages/sdk) | `FoundryClient` TypeScript SDK with optional mock client. |
+| [`packages/mcp`](packages/mcp) | MCP server (stdio + Streamable HTTP). |
+
+## Local development
 
 ```bash
 pnpm install
 pnpm build
+
+# Run MCP server locally with mock data (stdio)
+pnpm mcp:mock
+
+# Run with HTTP transport + MCP Inspector
+cd packages/mcp && pnpm run inspector:http
+
+# Tests
+pnpm test        # SDK
+pnpm test:mcp    # MCP server
 ```
-
-- **MCP (mock, stdio):** `pnpm mcp:mock`
-- **MCP (HTTP + Inspector):** `cd packages/mcp && pnpm run inspector:http`
-- **Docker smoke:** `pnpm docker:inspector` (see [packages/mcp/README.md](packages/mcp/README.md))
-- **Tests:** `pnpm test` (SDK) · `pnpm test:mcp` (MCP)
-
-## Deploying the MCP server
-
-The root [**Dockerfile**](Dockerfile) builds the MCP HTTP image. After deploy, use **`https://<host>/mcp`** with **`Authorization: Bearer <MCP_HTTP_API_KEY>`**; **`/health`** is unauthenticated.
-
-- **Render (Blueprint):** [render.yaml](render.yaml)
-- **Fly.io:** [fly.toml](fly.toml)
-
-**One-click (public repo):**
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/joostwmd/adaptyv-foundry)
-
-[![Deploy to Fly.io](https://fly.io/static/images/landing/deploy-button.svg)](https://fly.io/launch?repo=https://github.com/joostwmd/adaptyv-foundry)
-
-Set secrets on the platform (**`FOUNDRY_API_TOKEN`**, **`MCP_HTTP_API_KEY`**; optional **`FOUNDRY_USE_MOCK`**, **`ALLOWED_ORIGINS`**, **`FOUNDRY_API_BASE_URL`**). Details: [packages/mcp/README.md](packages/mcp/README.md).
-
-## Documentation map
-
-- [packages/sdk/README.md](packages/sdk/README.md) — SDK usage and publishing stance  
-- [packages/mcp/README.md](packages/mcp/README.md) — MCP environment variables, Inspector, Cursor, Docker  
-
-## License / naming
-
-Package names use the `@adaptyv/` scope for clarity of *purpose* (Foundry API). That is **not** an indication of official ownership; see the SDK README for the **npm publish** stance.
