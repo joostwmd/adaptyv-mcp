@@ -1,9 +1,14 @@
-import { FoundryClient } from "@adaptyv/foundry-sdk";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createFoundryClientForMcp, useMockFromEnv } from "../create-foundry-client.js";
 import { createMcpServer } from "../server.js";
 
 export async function startStdio(): Promise<void> {
-  const client = new FoundryClient({});
+  if (useMockFromEnv()) {
+    console.error(
+      "[adaptyv-foundry-mcp] FOUNDRY_USE_MOCK: using in-memory mock client (no HTTP).",
+    );
+  }
+  const client = createFoundryClientForMcp();
   const server = createMcpServer(client);
   const transport = new StdioServerTransport();
   await server.connect(transport);

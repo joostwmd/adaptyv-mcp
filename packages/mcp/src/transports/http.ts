@@ -1,7 +1,7 @@
-import { FoundryClient } from "@adaptyv/foundry-sdk";
 import { serve } from "@hono/node-server";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { Hono } from "hono";
+import { createFoundryClientForMcp, useMockFromEnv } from "../create-foundry-client.js";
 import { createMcpServer } from "../server.js";
 
 function parseAllowedOrigins(raw: string | undefined): Set<string> {
@@ -21,7 +21,12 @@ export async function startHttp(): Promise<void> {
   const host = process.env.HOST ?? "127.0.0.1";
   const allowedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
 
-  const foundryClient = new FoundryClient({});
+  if (useMockFromEnv()) {
+    console.error(
+      "[adaptyv-foundry-mcp] FOUNDRY_USE_MOCK: using in-memory mock client (no HTTP).",
+    );
+  }
+  const foundryClient = createFoundryClientForMcp();
 
   const app = new Hono();
 

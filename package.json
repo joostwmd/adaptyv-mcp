@@ -7,6 +7,7 @@
     "test": "pnpm --filter @adaptyv/foundry-sdk test",
     "test:mcp": "pnpm --filter adaptyv-foundry-mcp test",
     "mutate": "pnpm --filter @adaptyv/foundry-sdk mutate",
-    "mcp": "pnpm --filter adaptyv-foundry-mcp exec tsx src/index.ts"
+    "mcp": "pnpm --filter adaptyv-foundry-mcp exec tsx src/index.ts",
+    "mcp:mock": "pnpm --filter adaptyv-foundry-mcp exec env FOUNDRY_USE_MOCK=1 tsx src/index.ts"
   }
 }
