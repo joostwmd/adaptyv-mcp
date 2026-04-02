@@ -7,6 +7,11 @@ import {
   mcpHttpBearerAuthMiddleware,
 } from "../http/middleware/http-gateway.js";
 import { requestIdMiddleware } from "../http/middleware/request-id.js";
+import {
+  attachMcpInboundTransportLogging,
+  logMcpHttpExchangeEnd,
+  logMcpHttpExchangeStart,
+} from "../http/mcp-request-log.js";
 import { buildRootWelcomeBody } from "../http/root-welcome.js";
 import { mcpHttpRequestStore, type HttpGatewayVariables } from "../http/request-context.js";
 import { createMcpServer } from "../mcp-server.js";
@@ -65,12 +70,19 @@ export async function startHttp(): Promise<void> {
   app.all("/mcp", async (c) => {
     const requestId = c.get("requestId");
     return mcpHttpRequestStore.run({ requestId }, async () => {
+      const httpStarted = performance.now();
+      logMcpHttpExchangeStart(requestId, c.req.raw);
+
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });
+      attachMcpInboundTransportLogging(transport, { requestId, channel: "http" });
+
       const server = createMcpServer(foundryClient);
       await server.connect(transport);
       const res = await transport.handleRequest(c.req.raw);
+      logMcpHttpExchangeEnd(requestId, httpStarted, res);
+
       const headers = new Headers(res.headers);
       headers.set("X-Request-Id", requestId);
       return new Response(res.body, {
