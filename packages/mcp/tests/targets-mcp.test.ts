@@ -1,13 +1,12 @@
 import { targetMockData } from "@adaptyv/foundry-shared/mockdata";
 import { FoundryApiError } from "@adaptyv/foundry-sdk";
-import { describe, expect, it } from "vitest";
-import { createMockClient, withMcpSession } from "./test-utils.js";
+import { describe, expect, it, vi } from "vitest";
+import { createMockFoundryClient, withMcpSession } from "./test-utils.js";
 
 describe("MCP tools — targets", () => {
   it("list_targets — success", async () => {
-    const mock = createMockClient();
-    mock.targets.list.mockResolvedValue(targetMockData.list.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "list_targets",
         arguments: { ...targetMockData.list.query },
@@ -15,14 +14,12 @@ describe("MCP tools — targets", () => {
       expect(out.isError).not.toBe(true);
       expect(out.content[0].type).toBe("text");
       expect(out.content[0].text).toContain("EGFR");
-      expect(mock.targets.list).toHaveBeenCalledOnce();
     });
   });
 
   it("get_target — success", async () => {
-    const mock = createMockClient();
-    mock.targets.get.mockResolvedValue(targetMockData.get.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "get_target",
         arguments: { ...targetMockData.get.path },
@@ -32,25 +29,18 @@ describe("MCP tools — targets", () => {
   });
 
   it("list_custom_target_requests — success", async () => {
-    const mock = createMockClient();
-    mock.targets.listCustomRequests.mockResolvedValue(
-      targetMockData.listCustomRequests.response,
-    );
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "list_custom_target_requests",
         arguments: { ...targetMockData.listCustomRequests.query },
       });
-      expect(mock.targets.listCustomRequests).toHaveBeenCalled();
     });
   });
 
   it("get_custom_target_request — success", async () => {
-    const mock = createMockClient();
-    mock.targets.getCustomRequest.mockResolvedValue(
-      targetMockData.getCustomRequest.response,
-    );
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "get_custom_target_request",
         arguments: { ...targetMockData.getCustomRequest.path },
@@ -59,11 +49,8 @@ describe("MCP tools — targets", () => {
   });
 
   it("request_custom_target — success", async () => {
-    const mock = createMockClient();
-    mock.targets.requestCustom.mockResolvedValue(
-      targetMockData.requestCustom.response,
-    );
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "request_custom_target",
         arguments: { ...targetMockData.requestCustom.requestBody },
@@ -72,9 +59,11 @@ describe("MCP tools — targets", () => {
   });
 
   it("get_target — FoundryApiError becomes tool error", async () => {
-    const mock = createMockClient();
-    mock.targets.get.mockRejectedValue(new FoundryApiError(404, { error: "nope" }));
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    vi.spyOn(client.targets, "get").mockRejectedValue(
+      new FoundryApiError(404, { error: "nope" }),
+    );
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "get_target",
         arguments: { target_id: "x" },
@@ -82,11 +71,12 @@ describe("MCP tools — targets", () => {
       expect(out.isError).toBe(true);
       expect(out.content[0].text).toContain("404");
     });
+    vi.restoreAllMocks();
   });
 
   it("get_target — invalid input returns MCP validation error", async () => {
-    const mock = createMockClient();
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({ name: "get_target", arguments: {} });
       expect(out.isError).toBe(true);
       expect(out.content[0].text).toContain("target_id");

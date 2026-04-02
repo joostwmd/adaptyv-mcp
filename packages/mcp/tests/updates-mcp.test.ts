@@ -1,13 +1,12 @@
 import { updateMockData } from "@adaptyv/foundry-shared/mockdata";
 import { FoundryApiError } from "@adaptyv/foundry-sdk";
-import { describe, expect, it } from "vitest";
-import { createMockClient, withMcpSession } from "./test-utils.js";
+import { describe, expect, it, vi } from "vitest";
+import { createMockFoundryClient, withMcpSession } from "./test-utils.js";
 
 describe("MCP tools — updates", () => {
   it("list_updates — success", async () => {
-    const mock = createMockClient();
-    mock.updates.list.mockResolvedValue(updateMockData.list.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "list_updates",
         arguments: { ...updateMockData.list.query },
@@ -17,11 +16,8 @@ describe("MCP tools — updates", () => {
   });
 
   it("list_experiment_updates — success", async () => {
-    const mock = createMockClient();
-    mock.updates.listForExperiment.mockResolvedValue(
-      updateMockData.listForExperiment.response,
-    );
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "list_experiment_updates",
         arguments: { ...updateMockData.listForExperiment.input },
@@ -30,11 +26,11 @@ describe("MCP tools — updates", () => {
   });
 
   it("list_experiment_updates — API error", async () => {
-    const mock = createMockClient();
-    mock.updates.listForExperiment.mockRejectedValue(
+    const client = createMockFoundryClient();
+    vi.spyOn(client.updates, "listForExperiment").mockRejectedValue(
       new FoundryApiError(403, { error: "denied" }),
     );
-    await withMcpSession(mock, async (c) => {
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "list_experiment_updates",
         arguments: {
@@ -43,11 +39,12 @@ describe("MCP tools — updates", () => {
       });
       expect(out.isError).toBe(true);
     });
+    vi.restoreAllMocks();
   });
 
   it("list_experiment_updates — invalid args", async () => {
-    const mock = createMockClient();
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "list_experiment_updates",
         arguments: {},

@@ -1,13 +1,12 @@
 import { sequenceMockData } from "@adaptyv/foundry-shared/mockdata";
 import { FoundryApiError } from "@adaptyv/foundry-sdk";
-import { describe, expect, it } from "vitest";
-import { createMockClient, withMcpSession } from "./test-utils.js";
+import { describe, expect, it, vi } from "vitest";
+import { createMockFoundryClient, withMcpSession } from "./test-utils.js";
 
 describe("MCP tools — sequences", () => {
   it("list_sequences — success", async () => {
-    const mock = createMockClient();
-    mock.sequences.list.mockResolvedValue(sequenceMockData.list.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "list_sequences",
         arguments: { ...sequenceMockData.list.query },
@@ -17,9 +16,8 @@ describe("MCP tools — sequences", () => {
   });
 
   it("get_sequence — success", async () => {
-    const mock = createMockClient();
-    mock.sequences.get.mockResolvedValue(sequenceMockData.get.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "get_sequence",
         arguments: { ...sequenceMockData.get.path },
@@ -28,9 +26,8 @@ describe("MCP tools — sequences", () => {
   });
 
   it("add_sequences — success", async () => {
-    const mock = createMockClient();
-    mock.sequences.add.mockResolvedValue(sequenceMockData.add.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "add_sequences",
         arguments: { ...sequenceMockData.add.requestBody },
@@ -39,11 +36,8 @@ describe("MCP tools — sequences", () => {
   });
 
   it("list_experiment_sequences — success", async () => {
-    const mock = createMockClient();
-    mock.sequences.listForExperiment.mockResolvedValue(
-      sequenceMockData.listForExperiment.response,
-    );
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "list_experiment_sequences",
         arguments: { ...sequenceMockData.listForExperiment.input },
@@ -52,20 +46,23 @@ describe("MCP tools — sequences", () => {
   });
 
   it("get_sequence — API error", async () => {
-    const mock = createMockClient();
-    mock.sequences.get.mockRejectedValue(new FoundryApiError(404, { error: "gone" }));
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    vi.spyOn(client.sequences, "get").mockRejectedValue(
+      new FoundryApiError(404, { error: "gone" }),
+    );
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "get_sequence",
         arguments: { sequence_id: "nope" },
       });
       expect(out.isError).toBe(true);
     });
+    vi.restoreAllMocks();
   });
 
   it("get_sequence — invalid args", async () => {
-    const mock = createMockClient();
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({ name: "get_sequence", arguments: {} });
       expect(out.isError).toBe(true);
       expect(out.content[0].text).toContain("sequence_id");

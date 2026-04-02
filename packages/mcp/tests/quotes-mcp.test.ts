@@ -1,13 +1,12 @@
 import { quoteMockData } from "@adaptyv/foundry-shared/mockdata";
 import { FoundryApiError } from "@adaptyv/foundry-sdk";
-import { describe, expect, it } from "vitest";
-import { createMockClient, withMcpSession } from "./test-utils.js";
+import { describe, expect, it, vi } from "vitest";
+import { createMockFoundryClient, withMcpSession } from "./test-utils.js";
 
 describe("MCP tools — quotes", () => {
   it("list_quotes — success", async () => {
-    const mock = createMockClient();
-    mock.quotes.list.mockResolvedValue(quoteMockData.list.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "list_quotes",
         arguments: { ...quoteMockData.list.query },
@@ -17,9 +16,8 @@ describe("MCP tools — quotes", () => {
   });
 
   it("get_quote — success", async () => {
-    const mock = createMockClient();
-    mock.quotes.get.mockResolvedValue(quoteMockData.get.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "get_quote",
         arguments: { ...quoteMockData.get.path },
@@ -28,9 +26,8 @@ describe("MCP tools — quotes", () => {
   });
 
   it("confirm_quote — success", async () => {
-    const mock = createMockClient();
-    mock.quotes.confirm.mockResolvedValue(quoteMockData.confirm.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "confirm_quote",
         arguments: { ...quoteMockData.confirm.input },
@@ -39,9 +36,8 @@ describe("MCP tools — quotes", () => {
   });
 
   it("reject_quote — success", async () => {
-    const mock = createMockClient();
-    mock.quotes.reject.mockResolvedValue(quoteMockData.reject.response);
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       await c.callTool({
         name: "reject_quote",
         arguments: { ...quoteMockData.reject.input },
@@ -50,20 +46,23 @@ describe("MCP tools — quotes", () => {
   });
 
   it("get_quote — API error", async () => {
-    const mock = createMockClient();
-    mock.quotes.get.mockRejectedValue(new FoundryApiError(404, { error: "nf" }));
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    vi.spyOn(client.quotes, "get").mockRejectedValue(
+      new FoundryApiError(404, { error: "nf" }),
+    );
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({
         name: "get_quote",
-        arguments: { quote_id: "missing" },
+        arguments: { quote_id: "qt_missing" },
       });
       expect(out.isError).toBe(true);
     });
+    vi.restoreAllMocks();
   });
 
   it("get_quote — invalid args", async () => {
-    const mock = createMockClient();
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const out = await c.callTool({ name: "get_quote", arguments: {} });
       expect(out.isError).toBe(true);
       expect(out.content[0].text).toContain("quote_id");

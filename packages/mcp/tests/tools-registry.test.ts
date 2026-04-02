@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createMockClient, withMcpSession } from "./test-utils.js";
+import { createMockFoundryClient, withMcpSession } from "./test-utils.js";
 
 describe("MCP tool registry", () => {
   it("exposes all 32 tools", async () => {
-    const mock = createMockClient();
-    await withMcpSession(mock, async (c) => {
+    const client = createMockFoundryClient();
+    await withMcpSession(client, async (c) => {
       const { tools } = await c.listTools();
       expect(tools).toHaveLength(32);
       const names = new Set(tools.map((t) => t.name));
