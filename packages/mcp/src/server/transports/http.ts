@@ -7,6 +7,7 @@ import {
   mcpHttpBearerAuthMiddleware,
 } from "../http/middleware/http-gateway.js";
 import { requestIdMiddleware } from "../http/middleware/request-id.js";
+import { buildRootWelcomeBody } from "../http/root-welcome.js";
 import { mcpHttpRequestStore, type HttpGatewayVariables } from "../http/request-context.js";
 import { createMcpServer } from "../mcp-server.js";
 
@@ -49,6 +50,11 @@ export async function startHttp(): Promise<void> {
   app.use("*", requestIdMiddleware);
   app.use("*", allowedOriginsMiddleware(allowedOrigins));
 
+  app.get("/", (c) => {
+    c.header("X-Request-Id", c.get("requestId"));
+    return c.json(buildRootWelcomeBody());
+  });
+
   app.get("/health", (c) => {
     c.header("X-Request-Id", c.get("requestId"));
     return c.json({ status: "ok", service: "adaptyv-foundry-mcp" });
@@ -77,7 +83,7 @@ export async function startHttp(): Promise<void> {
 
   serve({ fetch: app.fetch, port, hostname: host }, (info) => {
     console.error(
-      `[adaptyv-foundry-mcp] HTTP listening on http://${host}:${info.port} (MCP: /mcp)`,
+      `[adaptyv-foundry-mcp] HTTP listening on http://${host}:${info.port} (GET /, /health; MCP: /mcp)`,
     );
   });
 }
