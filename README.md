@@ -1,46 +1,42 @@
-# adaptyv-foundry
+---
 
-Monorepo: TypeScript SDK for the Adaptyv Foundry API and an MCP server.
+### 3. Prepend to **`packages/mcp/README.md`** (keep everything after `# adaptyv-foundry-mcp` that you already have, or merge these sections after the title)
 
-- **MCP testing (Inspector, env vars, HTTP vs stdio):** [packages/mcp/README.md](packages/mcp/README.md). **Cursor over HTTP:** use the JSON example under *Cursor chat (Streamable HTTP)* in that README — merge into `.cursor/mcp.json` or `~/.cursor/mcp.json` and match `MCP_HTTP_API_KEY` in the Bearer.
-- **Mock MCP / Inspector (stdio):** `cd packages/mcp && pnpm run inspector` (passes `FOUNDRY_USE_MOCK=1` and a dev `FOUNDRY_API_TOKEN` placeholder; see MCP README).
-- **HTTP + Inspector in one go:** `cd packages/mcp && pnpm run inspector:http` (starts server, then Inspector on `http://127.0.0.1:3333/mcp`).
-- **Docker image + Inspector (mock defaults):** `pnpm docker:inspector` from repo root (requires Docker). Builds `foundry-mcp`, runs the container on port **8080** by default, opens MCP Inspector with the correct Bearer header. Use `pnpm docker:inspector -- --no-build` to skip rebuild.
-- **Live API MCP (stdio):** `FOUNDRY_API_TOKEN=… pnpm run inspector:api` in `packages/mcp` (alias for `inspector:stdio:live`).
-- **Stdio MCP with mock:** `pnpm mcp:mock` from repo root (sets dev `FOUNDRY_API_TOKEN` + mock).
-- **Stdio MCP live:** `pnpm mcp` requires `FOUNDRY_API_TOKEN` in the environment (no placeholder).
+Add **right after** the first line `# adaptyv-foundry-mcp`:
 
-Shared canned data: `@adaptyv/foundry-shared/mockdata`. In-memory client: `createMockFoundryClient` from `@adaptyv/foundry-sdk/mock`.
+```markdown
 
-## HTTP MCP (`MODE=http`)
+## How it works (architecture)
 
-| Variable | Role |
-|----------|------|
-| `FOUNDRY_USE_MOCK` | `1` / `true` = mock data; off = real Foundry API. |
-| `FOUNDRY_API_TOKEN` | **Always required** (mock does not send it to Foundry; live mode uses it). Server-side only. |
-| `MCP_HTTP_API_KEY` | **Required when `MODE=http`.** `/mcp` requires `Authorization: Bearer <key>`. `/health` is not protected. |
-| `ALLOWED_ORIGINS` | Comma-separated origins; when non-empty, requests with an `Origin` header must match (browser hardening). |
+- **Foundry access** — The server constructs a **`FoundryClient`** from [`@adaptyv/foundry-sdk`](../sdk) (see `packages/mcp/src/foundry-client.ts`). All MCP tools delegate to that client.
+- **Transports** — **stdio** (default) for local tools and Cursor `command`-style config; **`MODE=http`** runs **Hono** + **`WebStandardStreamableHTTPServerTransport`** on **`/mcp`** (see `packages/mcp/src/server/transports/`).
+- **Tool registration** — MCP tools are thin wrappers around SDK methods with Zod-validated arguments (`packages/mcp/src/tools/`).
 
-Responses from `/health` and `/mcp` include `X-Request-Id`. Clients may send `X-Request-Id` (or `x-request-id`) to correlate with server logs; otherwise the server generates a UUID. Tool error logs include the same id when the call runs over HTTP.
+## Demo / example hosted MCP (Streamable HTTP)
 
-Local example: `cd packages/mcp && pnpm run inspector:http`, or run `pnpm run start:http` and in another terminal `pnpm run inspector:http:connect`.
+An example deployment (configuration may be **mock** or **live** depending on operator env vars):
 
-See `packages/mcp/.env.example` and [packages/mcp/README.md](packages/mcp/README.md) for variables and testing steps.
+- **Health:** `https://adaptyv-foundry.onrender.com/health`
+- **MCP endpoint:** `https://adaptyv-foundry.onrender.com/mcp`  
+  Send header **`Authorization: Bearer <MCP_HTTP_API_KEY>`** (value is whatever the operator set on Render).
 
-## Deploy (Docker, Fly.io, Render)
+Do not treat this as a guaranteed SLA or as storing your data; it is a **demo**. For production, deploy your own instance (see below).
 
-The repo root [Dockerfile](Dockerfile) builds the MCP server for **Streamable HTTP** (`MODE=http`, `HOST=0.0.0.0`, default `PORT=8080`). After deploy, the MCP endpoint is `https://<your-host>/mcp` with header `Authorization: Bearer <MCP_HTTP_API_KEY>`.
+## One-click deploy (your own instance)
 
-**Required in production:** `FOUNDRY_API_TOKEN`, `MCP_HTTP_API_KEY`. Optional: `FOUNDRY_USE_MOCK`, `FOUNDRY_API_BASE_URL`, `ALLOWED_ORIGINS`. Platforms set `PORT` automatically when you listen on the port they expect (8080 in [fly.toml](fly.toml)).
+From the **repo root**, Render can provision from [`render.yaml`](../../render.yaml):
 
-**Local smoke (no Inspector):**
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/joostwmd/adaptyv-foundry)
 
-```bash
-docker build -t foundry-mcp .
-docker run --rm -e PORT=8080 -e MCP_HTTP_API_KEY=test -e FOUNDRY_API_TOKEN=test -e FOUNDRY_USE_MOCK=1 -p 8080:8080 foundry-mcp
-curl -s http://127.0.0.1:8080/health
-```
+After deploy: set **`FOUNDRY_API_TOKEN`** and copy **`MCP_HTTP_API_KEY`** into your client (e.g. Cursor `.cursor/mcp.json`). Use URL **`https://<your-service>.onrender.com/mcp`**.
 
-**Fly.io:** [fly.toml](fly.toml) — run `fly launch` / `fly deploy`, then `fly secrets set FOUNDRY_API_TOKEN=... MCP_HTTP_API_KEY=...`. One-click (public GitHub repo): [Deploy to Fly.io](https://fly.io/launch?repo=https://github.com/YOUR_ORG/adaptyv-foundry) (replace `YOUR_ORG`).
+## Mock mode vs real (Foundry API) mode
 
-**Render:** [render.yaml](render.yaml) Blueprint — connect the repo in the Render dashboard and set `FOUNDRY_API_TOKEN` and `MCP_HTTP_API_KEY` in the service environment. One-click: [Deploy to Render](https://render.com/deploy?repo=https://github.com/YOUR_ORG/adaptyv-foundry) (replace `YOUR_ORG`).
+| | **Mock** | **Real (live API)** |
+|--|----------|---------------------|
+| **Env** | `FOUNDRY_USE_MOCK=1` (or `true` / `yes`) | unset or `0` |
+| **Foundry** | **`createMockFoundryClient()`** — in-memory data from `@adaptyv/foundry-shared/mockdata`; **no HTTP** to Adaptyv | **`FoundryClient`** calls **`foundry-api-public.adaptyvbio.com`** (or `FOUNDRY_API_BASE_URL`) with **`FOUNDRY_API_TOKEN`** |
+| **`FOUNDRY_API_TOKEN`** | Still **required** at process startup (same env contract); not sent to Foundry in mock mode | Used as **Bearer** on every Foundry request |
+| **MCP HTTP auth** | Unchanged: **`MCP_HTTP_API_KEY`** still protects **`/mcp`** when `MODE=http` | Same |
+
+---
