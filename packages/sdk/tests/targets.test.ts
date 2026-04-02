@@ -18,6 +18,7 @@ import { targetFixtures } from "./fixtures/targets.js";
 import {
   assertLastFetch,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
 } from "./test-utils.js";
@@ -46,6 +47,8 @@ describe("TargetsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: ["/targets", "search=EGFR", "selfservice_only=true"],
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -67,6 +70,8 @@ describe("TargetsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/targets/${tPath.target_id}`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -90,6 +95,8 @@ describe("TargetsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: "/targets/request-custom",
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -113,6 +120,8 @@ describe("TargetsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/targets/request-custom/${cPath.request_id}`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -136,6 +145,7 @@ describe("TargetsResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: "/targets/request-custom",
+      accept: JSON_ACCEPT,
       body: targetFixtures.requestCustom.requestBody,
     });
   });

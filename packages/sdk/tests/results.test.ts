@@ -13,6 +13,7 @@ import { resultFixtures } from "./fixtures/results.js";
 import {
   assertLastFetch,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
 } from "./test-utils.js";
@@ -36,7 +37,12 @@ describe("ResultsResource", () => {
     const out = await client().results.list(query);
     resultListResponseSchema.parse(out);
     expect(out).toEqual(resultFixtures.list.response);
-    assertLastFetch(fetchMock, { method: "GET", urlIncludes: "/results" });
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/results",
+      accept: JSON_ACCEPT,
+      noBody: true,
+    });
   });
 
   it("list — FoundryApiError", async () => {
@@ -56,6 +62,8 @@ describe("ResultsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/results/${rPath.result_id}`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -80,6 +88,8 @@ describe("ResultsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/experiments/${experiment_id}/results`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 

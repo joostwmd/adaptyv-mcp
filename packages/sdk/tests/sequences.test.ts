@@ -15,6 +15,7 @@ import { sequenceFixtures } from "./fixtures/sequences.js";
 import {
   assertLastFetch,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
 } from "./test-utils.js";
@@ -38,7 +39,12 @@ describe("SequencesResource", () => {
     const out = await client().sequences.list(query);
     sequenceListResponseSchema.parse(out);
     expect(out).toEqual(sequenceFixtures.list.response);
-    assertLastFetch(fetchMock, { method: "GET", urlIncludes: "/sequences" });
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/sequences",
+      accept: JSON_ACCEPT,
+      noBody: true,
+    });
   });
 
   it("list — FoundryApiError", async () => {
@@ -58,6 +64,8 @@ describe("SequencesResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/sequences/${sPath.sequence_id}`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -81,6 +89,7 @@ describe("SequencesResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: "/sequences",
+      accept: JSON_ACCEPT,
       body: sequenceFixtures.add.requestBody,
     });
   });
@@ -109,6 +118,8 @@ describe("SequencesResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/experiments/${experiment_id}/sequences`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 

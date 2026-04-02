@@ -16,12 +16,17 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean --external @adaptyv/foundry-shared",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "mutate": "stryker run",
+    "mutate:scope": "stryker run --mutate"
   },
   "dependencies": {
     "@adaptyv/foundry-shared": "workspace:*"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^9.0.0",
+    "@stryker-mutator/vitest-runner": "^9.0.0",
+    "stryker-reporter-llm": "^0.1.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^3.0.5"

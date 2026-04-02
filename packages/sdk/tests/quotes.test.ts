@@ -16,6 +16,7 @@ import { quoteFixtures } from "./fixtures/quotes.js";
 import {
   assertLastFetch,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
 } from "./test-utils.js";
@@ -39,7 +40,12 @@ describe("QuotesResource", () => {
     const out = await client().quotes.list(query);
     quoteListResponseSchema.parse(out);
     expect(out).toEqual(quoteFixtures.list.response);
-    assertLastFetch(fetchMock, { method: "GET", urlIncludes: "/quotes" });
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/quotes",
+      accept: JSON_ACCEPT,
+      noBody: true,
+    });
   });
 
   it("list — FoundryApiError", async () => {
@@ -59,6 +65,8 @@ describe("QuotesResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/quotes/${qPath.quote_id}`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -81,6 +89,7 @@ describe("QuotesResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: `/quotes/${quote_id}/confirm`,
+      accept: JSON_ACCEPT,
       body,
     });
   });
@@ -102,6 +111,7 @@ describe("QuotesResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: `/quotes/${quote_id}/reject`,
+      accept: JSON_ACCEPT,
       body,
     });
   });

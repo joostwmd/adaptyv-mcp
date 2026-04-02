@@ -24,9 +24,12 @@ import { experimentFixtures } from "./fixtures/experiments.js";
 import {
   assertLastFetch,
   binaryResponse,
+  BINARY_ACCEPT,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
+  textPlainErrorResponse,
 } from "./test-utils.js";
 
 describe("ExperimentsResource", () => {
@@ -50,7 +53,12 @@ describe("ExperimentsResource", () => {
     const out = await client().experiments.list(query);
     experimentListResponseSchema.parse(out);
     expect(out).toEqual(experimentFixtures.list.response);
-    assertLastFetch(fetchMock, { method: "GET", urlIncludes: "/experiments" });
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/experiments",
+      accept: JSON_ACCEPT,
+      noBody: true,
+    });
   });
 
   it("list — FoundryApiError", async () => {
@@ -60,6 +68,20 @@ describe("ExperimentsResource", () => {
       name: "FoundryApiError",
       status: 500,
     } satisfies Partial<FoundryApiError>);
+  });
+
+  it("list — FoundryApiError with plain-text body", async () => {
+    fetchMock.mockResolvedValue(textPlainErrorResponse(500, "boom"));
+    await expect(client().experiments.list({})).rejects.toMatchObject({
+      status: 500,
+      body: "boom",
+    });
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/experiments",
+      accept: JSON_ACCEPT,
+      noBody: true,
+    });
   });
 
   it("create — success (201)", async () => {
@@ -75,6 +97,7 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: "/experiments",
+      accept: JSON_ACCEPT,
       body: experimentFixtures.create.requestBody,
     });
   });
@@ -100,6 +123,8 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/experiments/${expPath.experiment_id}`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -122,6 +147,7 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "PATCH",
       urlIncludes: `/experiments/${experiment_id}`,
+      accept: JSON_ACCEPT,
       body,
     });
   });
@@ -147,6 +173,8 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: `/experiments/${subPath.experiment_id}/submit`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -170,6 +198,7 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: "/experiments/cost-estimate",
+      accept: JSON_ACCEPT,
       body: experimentFixtures.estimateCost.requestBody,
     });
   });
@@ -196,6 +225,8 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: "/invoice",
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -217,6 +248,8 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: "/quote",
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 
@@ -241,6 +274,7 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: `/experiments/${experiment_id}/quote/confirm`,
+      accept: JSON_ACCEPT,
       body,
     });
   });
@@ -266,6 +300,8 @@ describe("ExperimentsResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: "/quote/pdf",
+      accept: BINARY_ACCEPT,
+      noBody: true,
     });
   });
 

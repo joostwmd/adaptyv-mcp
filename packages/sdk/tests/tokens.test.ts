@@ -14,6 +14,7 @@ import { tokenFixtures } from "./fixtures/tokens.js";
 import {
   assertLastFetch,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
 } from "./test-utils.js";
@@ -37,7 +38,12 @@ describe("TokensResource", () => {
     const out = await client().tokens.list(query);
     tokenListResponseSchema.parse(out);
     expect(out).toEqual(tokenFixtures.list.response);
-    assertLastFetch(fetchMock, { method: "GET", urlIncludes: "/tokens" });
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/tokens",
+      accept: JSON_ACCEPT,
+      noBody: true,
+    });
   });
 
   it("list — FoundryApiError", async () => {
@@ -61,6 +67,7 @@ describe("TokensResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: "/tokens/attenuate",
+      accept: JSON_ACCEPT,
       body: tokenFixtures.attenuate.requestBody,
     });
   });
@@ -85,6 +92,8 @@ describe("TokensResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: "/tokens/revoke",
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 

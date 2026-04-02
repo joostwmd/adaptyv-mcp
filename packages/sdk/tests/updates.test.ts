@@ -11,6 +11,7 @@ import { updateFixtures } from "./fixtures/updates.js";
 import {
   assertLastFetch,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
 } from "./test-utils.js";
@@ -34,7 +35,12 @@ describe("UpdatesResource", () => {
     const out = await client().updates.list(query);
     updateListResponseSchema.parse(out);
     expect(out).toEqual(updateFixtures.list.response);
-    assertLastFetch(fetchMock, { method: "GET", urlIncludes: "/updates" });
+    assertLastFetch(fetchMock, {
+      method: "GET",
+      urlIncludes: "/updates",
+      accept: JSON_ACCEPT,
+      noBody: true,
+    });
   });
 
   it("list — FoundryApiError", async () => {
@@ -59,6 +65,8 @@ describe("UpdatesResource", () => {
     assertLastFetch(fetchMock, {
       method: "GET",
       urlIncludes: `/experiments/${experiment_id}/updates`,
+      accept: JSON_ACCEPT,
+      noBody: true,
     });
   });
 

@@ -10,6 +10,7 @@ import { feedbackFixtures } from "./fixtures/feedback.js";
 import {
   assertLastFetch,
   installFetchMock,
+  JSON_ACCEPT,
   jsonErrorResponse,
   jsonResponse,
 } from "./test-utils.js";
@@ -40,6 +41,7 @@ describe("FeedbackResource", () => {
     assertLastFetch(fetchMock, {
       method: "POST",
       urlIncludes: "/feedback/submit",
+      accept: JSON_ACCEPT,
       body: feedbackFixtures.submit.requestBody,
     });
   });
