@@ -4,6 +4,8 @@ MCP server for the [Adaptyv Foundry](https://foundry.adaptyvbio.com) HTTP API. E
 
 The HTTP entrypoint is **`/mcp`** (not the site root). **`GET /health`** is for load checks and is **not** protected by the MCP Bearer.
 
+> **Disclaimer:** This MCP server was developed and validated against the same **mock** Foundry API as the SDK (from the public OpenAPI spec), not the official live service. Expect possible minor differences or bugs in live mode. See the [root README](../../README.md) for the full notice.
+
 TypeScript client used internally: [**`@adaptyv/foundry-sdk`**](../sdk/README.md).
 
 ## How it works (architecture)

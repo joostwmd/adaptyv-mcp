@@ -2,6 +2,8 @@
 
 TypeScript client for the **Adaptyv Foundry HTTP API** (experiments, targets, sequences, results, quotes, updates, tokens, feedback). This package lives in a monorepo next to **`@adaptyv/foundry-shared`** (Zod schemas and mock data derived from the public OpenAPI spec).
 
+> **Disclaimer:** The SDK was built and tested against the **mock** implementation aligned with the OpenAPI spec, not against a verified live Foundry account. Minor mismatches or bugs are possible when calling the real API. See the [root README](../../README.md) for the full notice.
+
 ## Install (workspace / monorepo)
 
 ```bash

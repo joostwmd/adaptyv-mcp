@@ -6,6 +6,8 @@ The server speaks both **stdio** (local process) and **Streamable HTTP** (`/mcp`
 
 > **Not affiliated with or endorsed by Adaptyv Bio.** This is an independent project built to make programmatic access to Foundry-style workflows easier for builders and researchers.
 
+> **Disclaimer — mock-only validation:** The TypeScript SDK and MCP server were developed and tested **only against a mock implementation** of the Foundry API, generated from the public OpenAPI specification. The maintainer does **not** have access to the official Foundry API for end-to-end verification. When you point the server at a live Foundry account, request shapes, filters, error handling, or edge cases might not match production exactly, so you may encounter **minor bugs** or surprises. Issues and pull requests that align behavior with the real API are welcome.
+
 ---
 
 ## Motivation
